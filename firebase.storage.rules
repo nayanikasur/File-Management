@@ -1,0 +1,14 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      // Allow read, write, and CORS requests for authenticated users
+      allow read, write: if request.auth != null;
+      allow get: if request.origin == "http://localhost:3000";
+      // You can add more origins for local development or specify your production domains.
+      // allow get: if request.origin == "http://your-production-domain.com";
+      allow list: if true;
+    }
+  }
+}
