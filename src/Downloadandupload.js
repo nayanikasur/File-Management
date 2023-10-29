@@ -111,128 +111,128 @@ export const DeleteButton = styled.button`
 `;
 
 const Downloadandupload = () => {
-    const [file, setFile] = useState(null);
-    const [everyoneRegistered, setEveryoneRegistered] = useState([]);
-    const [Url, setUrl] = useState('');
+  const [file, setFile] = useState(null);
+  const [everyoneRegistered, setEveryoneRegistered] = useState([]);
+  const [Url, setUrl] = useState('');
 
-    async function fetchData() {
-        const querySnapshot = await getDocs(collection(db, "individual"));
-        const userData = [];
+  async function fetchData() {
+    const querySnapshot = await getDocs(collection(db, "individual"));
+    const userData = [];
 
 
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            const id = doc.id;
-            const username = data.username;
-            const filename = data.filename;
-            const url = data.url;
-            if (username === auth.currentUser.email) {
-                userData.push({ username, filename, url, id });
-            }
-        });
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      const id = doc.id;
+      const username = data.username;
+      const filename = data.filename;
+      const url = data.url;
+      if (username === auth.currentUser.email) {
+        userData.push({ username, filename, url, id });
+      }
+    });
 
-        setEveryoneRegistered(userData);
-    }
+    setEveryoneRegistered(userData);
+  }
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-    console.log(everyoneRegistered);
+  console.log(everyoneRegistered);
 
-    const downloadFileUrl = (url) => {
-        const xhr = new XMLHttpRequest();
-        xhr.responseType = 'blob';
+  const downloadFileUrl = (url, filename) => {
+    const xhr = new XMLHttpRequest();
+    xhr.responseType = 'blob';
 
-        xhr.onload = (event) => {
-            const blob = xhr.response;
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'your-pdf-file.pdf';
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        };
-
-        xhr.open('GET', url);
-        xhr.send();
+    xhr.onload = (event) => {
+      const blob = xhr.response;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     };
 
-    const deleteFile = (index) => {
-        async function remove(i) {
-            const docref = doc(db, "individual", i);
-            await deleteDoc(docref);
-        }
-        remove(index)
-        fetchData()
+    xhr.open('GET', url);
+    xhr.send();
+  };
+
+  const deleteFile = (index) => {
+    async function remove(i) {
+      const docref = doc(db, "individual", i);
+      await deleteDoc(docref);
     }
+    remove(index)
+    fetchData()
+  }
 
-    const upload = () => {
-        if (file === null) return;
+  const upload = () => {
+    if (file === null) return;
 
-        const fileRef = ref(storage, `/files/${file.name}`);
+    const fileRef = ref(storage, `/files/${file.name}`);
 
-        uploadBytes(fileRef, file)
-            .then(() => {
-                alert("File Uploaded");
+    uploadBytes(fileRef, file)
+      .then(() => {
+        alert("File Uploaded");
 
-                getDownloadURL(fileRef)
-                    .then((url) => {
-                        setUrl(url);
-                        addIndividual(url);
-                    })
-                    .catch((error) => {
-                        console.error("Error getting download URL:", error);
-                    });
-            })
-            .catch((error) => {
-                console.error("Upload error", error);
-            });
+        getDownloadURL(fileRef)
+          .then((url) => {
+            setUrl(url);
+            addIndividual(url);
+          })
+          .catch((error) => {
+            console.error("Error getting download URL:", error);
+          });
+      })
+      .catch((error) => {
+        console.error("Upload error", error);
+      });
 
 
-        async function addIndividual(url) {
-            const filename = file.name;
-            const docRef = await addDoc(collection(db, "individual"),
-                {
-                    username: auth.currentUser.email,
-                    filename,
-                    url
-                });
-            console.log(docRef);
-            fetchData()
-        }
+    async function addIndividual(url) {
+      const filename = file.name;
+      const docRef = await addDoc(collection(db, "individual"),
+        {
+          username: auth.currentUser.email,
+          filename,
+          url
+        });
+      console.log(docRef);
+      fetchData()
     }
+  }
 
-    return (
-        <>
-            <Container>
-                <Title>FILE MANAGEMENT</Title>
+  return (
+    <>
+      <Container>
+        <Title>FILE MANAGEMENT</Title>
 
-                <FileInput type="file" onChange={(e) => {
-                    setFile(e.target.files[0]);
-                }} />
-                <UploadButton onClick={upload}>Upload</UploadButton>
-                <br />
+        <FileInput type="file" onChange={(e) => {
+          setFile(e.target.files[0]);
+        }} />
+        <UploadButton onClick={upload}>Upload</UploadButton>
+        <br />
 
-                <FileList>
-                    {everyoneRegistered.map((doc, i) => {
-                        return (
-                            <ListItem key={i}>
-                                <FileTitle>{doc.filename}</FileTitle>
-                                <ButtonGroup>
-                                    <DeleteButton onClick={() => deleteFile(doc.id)}>Delete</DeleteButton>
-                                    <DownloadButton onClick={() => downloadFileUrl(doc.url)}>Download</DownloadButton>
-                                </ButtonGroup>
-                            </ListItem>
-                        );
-                    })}
-                </FileList>
-            </Container>
+        <FileList>
+          {everyoneRegistered.map((doc, i) => {
+            return (
+              <ListItem key={i}>
+                <FileTitle>{doc.filename}</FileTitle>
+                <ButtonGroup>
+                  <DeleteButton onClick={() => deleteFile(doc.id)}>Delete</DeleteButton>
+                  <DownloadButton onClick={() => downloadFileUrl(doc.url, doc.filename)}>Download</DownloadButton>
+                </ButtonGroup>
+              </ListItem>
+            );
+          })}
+        </FileList>
+      </Container>
 
 
-        </>
-    )
+    </>
+  )
 }
 
 export default Downloadandupload;
